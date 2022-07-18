@@ -560,7 +560,6 @@ int CPUParticles3D::get_noise_octaves() {
 	return noise_octaves;
 }
 
-
 Ref<Curve> CPUParticles3D::get_scale_curve_x() const {
 	return scale_curve_x;
 }

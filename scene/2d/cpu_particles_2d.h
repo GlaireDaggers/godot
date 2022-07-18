@@ -32,6 +32,7 @@
 #define CPU_PARTICLES_2D_H
 
 #include "scene/2d/node_2d.h"
+#include "thirdparty/noise/FastNoiseLite.h"
 
 class CPUParticles2D : public Node2D {
 private:
@@ -176,6 +177,16 @@ private:
 
 	Vector2 gravity = Vector2(0, 980);
 
+	bool noise_enabled = false;
+	real_t noise_frequency = 1.0f;
+	real_t noise_amplitude = 1.0f;
+	int noise_octaves = 3;
+	real_t noise_gain = 0.5f;
+	real_t noise_lacunarity = 2.0f;
+
+	fastnoiselite::FastNoiseLite noise_x;
+	fastnoiselite::FastNoiseLite noise_y;
+
 	void _update_internal();
 	void _particles_process(double p_delta);
 	void _update_particle_data_buffer();
@@ -281,6 +292,20 @@ public:
 
 	void set_gravity(const Vector2 &p_gravity);
 	Vector2 get_gravity() const;
+
+	void set_noise_enabled(bool p_noise_enabled);
+	void set_noise_frequency(real_t p_noise_frequency);
+	void set_noise_amplitude(real_t p_noise_amplitude);
+	void set_noise_gain(real_t p_noise_gain);
+	void set_noise_lacunarity(real_t p_noise_lacunarity);
+	void set_noise_octaves(int p_noise_octaves);
+
+	bool get_noise_enabled();
+	real_t get_noise_frequency();
+	real_t get_noise_amplitude();
+	real_t get_noise_gain();
+	real_t get_noise_lacunarity();
+	int get_noise_octaves();
 
 	TypedArray<String> get_configuration_warnings() const override;
 

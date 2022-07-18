@@ -478,6 +478,62 @@ Vector2 CPUParticles2D::get_gravity() const {
 	return gravity;
 }
 
+void CPUParticles2D::set_noise_enabled(bool p_noise_enabled) {
+	noise_enabled = p_noise_enabled;
+}
+
+void CPUParticles2D::set_noise_frequency(real_t p_noise_frequency) {
+	noise_frequency = p_noise_frequency;
+	noise_x.SetFrequency(p_noise_frequency);
+	noise_y.SetFrequency(p_noise_frequency);
+}
+
+void CPUParticles2D::set_noise_amplitude(real_t p_noise_amplitude) {
+	noise_amplitude = p_noise_amplitude;
+}
+
+void CPUParticles2D::set_noise_gain(real_t p_noise_gain) {
+	noise_gain = p_noise_gain;
+	noise_x.SetFractalGain(p_noise_gain);
+	noise_y.SetFractalGain(p_noise_gain);
+}
+
+void CPUParticles2D::set_noise_lacunarity(real_t p_noise_lacunarity) {
+	noise_lacunarity = p_noise_lacunarity;
+	noise_x.SetFractalLacunarity(p_noise_lacunarity);
+	noise_y.SetFractalLacunarity(p_noise_lacunarity);
+}
+
+void CPUParticles2D::set_noise_octaves(int p_noise_octaves) {
+	noise_octaves = p_noise_octaves;
+	noise_x.SetFractalOctaves(p_noise_octaves);
+	noise_y.SetFractalOctaves(p_noise_octaves);
+}
+
+bool CPUParticles2D::get_noise_enabled() {
+	return noise_enabled;
+}
+
+real_t CPUParticles2D::get_noise_frequency() {
+	return noise_frequency;
+}
+
+real_t CPUParticles2D::get_noise_amplitude() {
+	return noise_amplitude;
+}
+
+real_t CPUParticles2D::get_noise_gain() {
+	return noise_gain;
+}
+
+real_t CPUParticles2D::get_noise_lacunarity() {
+	return noise_lacunarity;
+}
+
+int CPUParticles2D::get_noise_octaves() {
+	return noise_octaves;
+}
+
 void CPUParticles2D::set_scale_curve_x(Ref<Curve> p_scale_curve) {
 	scale_curve_x = p_scale_curve;
 }
@@ -884,6 +940,12 @@ void CPUParticles2D::_particles_process(double p_delta) {
 			//apply tangential acceleration;
 			Vector2 yx = Vector2(diff.y, diff.x);
 			force += yx.length() > 0.0 ? yx.normalized() * (tex_tangential_accel * Math::lerp(parameters_min[PARAM_TANGENTIAL_ACCEL], parameters_max[PARAM_TANGENTIAL_ACCEL], rand_from_seed(alt_seed))) : Vector2();
+			//apply noise
+			if (noise_enabled) {
+				real_t nx = noise_x.GetNoise(p.transform[2].x, p.transform[2].y);
+				real_t ny = noise_y.GetNoise(p.transform[2].x, p.transform[2].y);
+				force += Vector2(nx, ny) * noise_amplitude;
+			}
 			//apply attractor forces
 			p.velocity += force * local_delta;
 			//orbit velocity
@@ -1354,6 +1416,20 @@ void CPUParticles2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_gravity"), &CPUParticles2D::get_gravity);
 	ClassDB::bind_method(D_METHOD("set_gravity", "accel_vec"), &CPUParticles2D::set_gravity);
 
+	ClassDB::bind_method(D_METHOD("get_noise_enabled"), &CPUParticles2D::get_noise_enabled);
+	ClassDB::bind_method(D_METHOD("get_noise_frequency"), &CPUParticles2D::get_noise_frequency);
+	ClassDB::bind_method(D_METHOD("get_noise_amplitude"), &CPUParticles2D::get_noise_amplitude);
+	ClassDB::bind_method(D_METHOD("get_noise_gain"), &CPUParticles2D::get_noise_gain);
+	ClassDB::bind_method(D_METHOD("get_noise_lacunarity"), &CPUParticles2D::get_noise_lacunarity);
+	ClassDB::bind_method(D_METHOD("get_noise_octaves"), &CPUParticles2D::get_noise_octaves);
+
+	ClassDB::bind_method(D_METHOD("set_noise_enabled"), &CPUParticles2D::set_noise_enabled);
+	ClassDB::bind_method(D_METHOD("set_noise_frequency"), &CPUParticles2D::set_noise_frequency);
+	ClassDB::bind_method(D_METHOD("set_noise_amplitude"), &CPUParticles2D::set_noise_amplitude);
+	ClassDB::bind_method(D_METHOD("set_noise_gain"), &CPUParticles2D::set_noise_gain);
+	ClassDB::bind_method(D_METHOD("set_noise_lacunarity"), &CPUParticles2D::set_noise_lacunarity);
+	ClassDB::bind_method(D_METHOD("set_noise_octaves"), &CPUParticles2D::set_noise_octaves);
+
 	ClassDB::bind_method(D_METHOD("get_split_scale"), &CPUParticles2D::get_split_scale);
 	ClassDB::bind_method(D_METHOD("set_split_scale", "split_scale"), &CPUParticles2D::set_split_scale);
 
@@ -1379,6 +1455,13 @@ void CPUParticles2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "spread", PROPERTY_HINT_RANGE, "0,180,0.01"), "set_spread", "get_spread");
 	ADD_GROUP("Gravity", "");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "gravity", PROPERTY_HINT_NONE, U"suffix:px/s\u00B2"), "set_gravity", "get_gravity");
+	ADD_GROUP("Noise", "");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "noise_enabled"), "set_noise_enabled", "get_noise_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "noise_frequency"), "set_noise_frequency", "get_noise_frequency");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "noise_amplitude"), "set_noise_amplitude", "get_noise_amplitude");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "noise_gain"), "set_noise_gain", "get_noise_gain");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "noise_lacunarity"), "set_noise_lacunarity", "get_noise_lacunarity");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "noise_octaves"), "set_noise_octaves", "get_noise_octaves");
 	ADD_GROUP("Initial Velocity", "initial_");
 	ADD_PROPERTYI(PropertyInfo(Variant::FLOAT, "initial_velocity_min", PROPERTY_HINT_RANGE, "0,1000,0.01,or_greater,suffix:px/s"), "set_param_min", "get_param_min", PARAM_INITIAL_LINEAR_VELOCITY);
 	ADD_PROPERTYI(PropertyInfo(Variant::FLOAT, "initial_velocity_max", PROPERTY_HINT_RANGE, "0,1000,0.01,or_greater,suffix:px/s"), "set_param_max", "get_param_max", PARAM_INITIAL_LINEAR_VELOCITY);
@@ -1497,6 +1580,16 @@ CPUParticles2D::CPUParticles2D() {
 	set_param_max(PARAM_HUE_VARIATION, 0);
 	set_param_max(PARAM_ANIM_SPEED, 0);
 	set_param_max(PARAM_ANIM_OFFSET, 0);
+
+	set_noise_enabled(false);
+	set_noise_frequency(0.1);
+	set_noise_amplitude(64);
+	set_noise_gain(0.5);
+	set_noise_lacunarity(2.0);
+	set_noise_octaves(3);
+
+	noise_x.SetNoiseType(fastnoiselite::FastNoiseLite::NoiseType_OpenSimplex2);
+	noise_y.SetNoiseType(fastnoiselite::FastNoiseLite::NoiseType_OpenSimplex2);
 
 	for (int i = 0; i < PARTICLE_FLAG_MAX; i++) {
 		particle_flags[i] = false;
