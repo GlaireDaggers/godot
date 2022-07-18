@@ -500,6 +500,67 @@ Vector3 CPUParticles3D::get_gravity() const {
 	return gravity;
 }
 
+void CPUParticles3D::set_noise_enabled(bool p_noise_enabled) {
+	noise_enabled = p_noise_enabled;
+}
+
+void CPUParticles3D::set_noise_frequency(real_t p_noise_frequency) {
+	noise_frequency = p_noise_frequency;
+	noise_x.SetFrequency(p_noise_frequency);
+	noise_y.SetFrequency(p_noise_frequency);
+	noise_z.SetFrequency(p_noise_frequency);
+}
+
+void CPUParticles3D::set_noise_amplitude(real_t p_noise_amplitude) {
+	noise_amplitude = p_noise_amplitude;
+}
+
+void CPUParticles3D::set_noise_gain(real_t p_noise_gain) {
+	noise_gain = p_noise_gain;
+	noise_x.SetFractalGain(p_noise_gain);
+	noise_y.SetFractalGain(p_noise_gain);
+	noise_z.SetFractalGain(p_noise_gain);
+}
+
+void CPUParticles3D::set_noise_lacunarity(real_t p_noise_lacunarity) {
+	noise_lacunarity = p_noise_lacunarity;
+	noise_x.SetFractalLacunarity(p_noise_lacunarity);
+	noise_y.SetFractalLacunarity(p_noise_lacunarity);
+	noise_z.SetFractalLacunarity(p_noise_lacunarity);
+}
+
+void CPUParticles3D::set_noise_octaves(int p_noise_octaves) {
+	noise_octaves = p_noise_octaves;
+	noise_x.SetFractalOctaves(p_noise_octaves);
+	noise_y.SetFractalOctaves(p_noise_octaves);
+	noise_z.SetFractalOctaves(p_noise_octaves);
+}
+
+bool CPUParticles3D::get_noise_enabled() {
+	return noise_enabled;
+}
+
+real_t CPUParticles3D::get_noise_frequency() {
+	return noise_frequency;
+}
+
+real_t CPUParticles3D::get_noise_amplitude() {
+	return noise_amplitude;
+}
+
+real_t CPUParticles3D::get_noise_gain() {
+	return noise_gain;
+}
+
+real_t CPUParticles3D::get_noise_lacunarity() {
+	return noise_lacunarity;
+}
+
+int CPUParticles3D::get_noise_octaves() {
+	return noise_octaves;
+}
+
+
 Ref<Curve> CPUParticles3D::get_scale_curve_x() const {
 	return scale_curve_x;
 }
@@ -977,6 +1038,13 @@ void CPUParticles3D::_particles_process(double p_delta) {
 			} else {
 				Vector3 crossDiff = diff.normalized().cross(gravity.normalized());
 				force += crossDiff.length() > 0.0 ? crossDiff.normalized() * (tex_tangential_accel * Math::lerp(parameters_min[PARAM_TANGENTIAL_ACCEL], parameters_max[PARAM_TANGENTIAL_ACCEL], rand_from_seed(alt_seed))) : Vector3();
+			}
+			//apply noise
+			if (noise_enabled) {
+				real_t nx = noise_x.GetNoise(p.transform.origin.x, p.transform.origin.y, p.transform.origin.z);
+				real_t ny = noise_y.GetNoise(p.transform.origin.x, p.transform.origin.y, p.transform.origin.z);
+				real_t nz = noise_z.GetNoise(p.transform.origin.x, p.transform.origin.y, p.transform.origin.z);
+				force += Vector3(nx, ny, nz) * noise_amplitude;
 			}
 			//apply attractor forces
 			p.velocity += force * local_delta;
@@ -1531,6 +1599,20 @@ void CPUParticles3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_gravity"), &CPUParticles3D::get_gravity);
 	ClassDB::bind_method(D_METHOD("set_gravity", "accel_vec"), &CPUParticles3D::set_gravity);
 
+	ClassDB::bind_method(D_METHOD("get_noise_enabled"), &CPUParticles3D::get_noise_enabled);
+	ClassDB::bind_method(D_METHOD("get_noise_frequency"), &CPUParticles3D::get_noise_frequency);
+	ClassDB::bind_method(D_METHOD("get_noise_amplitude"), &CPUParticles3D::get_noise_amplitude);
+	ClassDB::bind_method(D_METHOD("get_noise_gain"), &CPUParticles3D::get_noise_gain);
+	ClassDB::bind_method(D_METHOD("get_noise_lacunarity"), &CPUParticles3D::get_noise_lacunarity);
+	ClassDB::bind_method(D_METHOD("get_noise_octaves"), &CPUParticles3D::get_noise_octaves);
+
+	ClassDB::bind_method(D_METHOD("set_noise_enabled"), &CPUParticles3D::set_noise_enabled);
+	ClassDB::bind_method(D_METHOD("set_noise_frequency"), &CPUParticles3D::set_noise_frequency);
+	ClassDB::bind_method(D_METHOD("set_noise_amplitude"), &CPUParticles3D::set_noise_amplitude);
+	ClassDB::bind_method(D_METHOD("set_noise_gain"), &CPUParticles3D::set_noise_gain);
+	ClassDB::bind_method(D_METHOD("set_noise_lacunarity"), &CPUParticles3D::set_noise_lacunarity);
+	ClassDB::bind_method(D_METHOD("set_noise_octaves"), &CPUParticles3D::set_noise_octaves);
+
 	ClassDB::bind_method(D_METHOD("get_split_scale"), &CPUParticles3D::get_split_scale);
 	ClassDB::bind_method(D_METHOD("set_split_scale", "split_scale"), &CPUParticles3D::set_split_scale);
 
@@ -1566,6 +1648,13 @@ void CPUParticles3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "flatness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_flatness", "get_flatness");
 	ADD_GROUP("Gravity", "");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity"), "set_gravity", "get_gravity");
+	ADD_GROUP("Noise", "");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "noise_enabled"), "set_noise_enabled", "get_noise_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "noise_frequency"), "set_noise_frequency", "get_noise_frequency");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "noise_amplitude"), "set_noise_amplitude", "get_noise_amplitude");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "noise_gain"), "set_noise_gain", "get_noise_gain");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "noise_lacunarity"), "set_noise_lacunarity", "get_noise_lacunarity");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "noise_octaves"), "set_noise_octaves", "get_noise_octaves");
 	ADD_GROUP("Initial Velocity", "initial_");
 	ADD_PROPERTYI(PropertyInfo(Variant::FLOAT, "initial_velocity_min", PROPERTY_HINT_RANGE, "0,1000,0.01,or_greater"), "set_param_min", "get_param_min", PARAM_INITIAL_LINEAR_VELOCITY);
 	ADD_PROPERTYI(PropertyInfo(Variant::FLOAT, "initial_velocity_max", PROPERTY_HINT_RANGE, "0,1000,0.01,or_greater"), "set_param_max", "get_param_max", PARAM_INITIAL_LINEAR_VELOCITY);
@@ -1694,6 +1783,17 @@ CPUParticles3D::CPUParticles3D() {
 	set_emission_ring_inner_radius(0);
 
 	set_gravity(Vector3(0, -9.8, 0));
+
+	set_noise_enabled(false);
+	set_noise_frequency(1.0);
+	set_noise_amplitude(1.0);
+	set_noise_gain(0.5);
+	set_noise_lacunarity(2.0);
+	set_noise_octaves(3);
+
+	noise_x.SetNoiseType(fastnoiselite::FastNoiseLite::NoiseType_OpenSimplex2);
+	noise_y.SetNoiseType(fastnoiselite::FastNoiseLite::NoiseType_OpenSimplex2);
+	noise_z.SetNoiseType(fastnoiselite::FastNoiseLite::NoiseType_OpenSimplex2);
 
 	for (int i = 0; i < PARTICLE_FLAG_MAX; i++) {
 		particle_flags[i] = false;
